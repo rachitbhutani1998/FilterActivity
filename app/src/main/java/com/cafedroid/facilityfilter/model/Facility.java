@@ -54,7 +54,6 @@ public class Facility extends RealmObject {
         Realm realm = Realm.getDefaultInstance();
         RealmList<Facility> facilities = new RealmList<>();
         JSONArray facilitiesArray = response.getJSONArray("facilities");
-        realm.beginTransaction();
         for (int i = 0; i < facilitiesArray.length(); i++) {
             JSONObject thisFacility = facilitiesArray.getJSONObject(i);
             String facilityName = thisFacility.getString("name");
@@ -79,7 +78,6 @@ public class Facility extends RealmObject {
             facility.setOptions(options);
             facilities.add(facility);
         }
-        realm.commitTransaction();
         return facilities;
     }
 

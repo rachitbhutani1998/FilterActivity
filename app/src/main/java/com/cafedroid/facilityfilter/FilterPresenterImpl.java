@@ -6,9 +6,9 @@ import android.content.Context;
 import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.JSONObjectRequestListener;
+import com.cafedroid.facilityfilter.model.DbValidity;
 import com.cafedroid.facilityfilter.model.Exclusion;
 import com.cafedroid.facilityfilter.model.Facility;
-import com.cafedroid.facilityfilter.model.Option;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,6 +41,15 @@ public class FilterPresenterImpl implements FilterPresenter {
     public void loadData() {
         realm.beginTransaction();
 
+        DbValidity validityResult = realm.where(DbValidity.class)
+                .findFirst();
+
+        if (validityResult != null
+                && System.currentTimeMillis() - validityResult.getTime() >= DbValidity.ONE_DAY_MILLIS) {
+            callApi();
+            return;
+        }
+
         RealmResults<Facility> realmResults = realm.where(Facility.class)
                 .findAll();
 
@@ -68,11 +77,13 @@ public class FilterPresenterImpl implements FilterPresenter {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
+                            realm.beginTransaction();
+                            DbValidity validity = realm.createObject(DbValidity.class);
+                            validity.setTime(System.currentTimeMillis());
                             parseJsonForExclusions(response);
                             facilities = Facility.parseJson(response);
-                            realm.beginTransaction();
-                            realm.copyToRealm(facilities);
                             realm.commitTransaction();
+
                             if (facilities.isEmpty())
                                 filterView.showError("No facility to display");
                             else loadData();
@@ -92,7 +103,6 @@ public class FilterPresenterImpl implements FilterPresenter {
 
     @SuppressLint("UseSparseArrays")
     private void parseJsonForExclusions(JSONObject response) throws JSONException {
-        realm.beginTransaction();
         JSONArray exJsonArray = response.getJSONArray("exclusions");
         for (int i = 0; i < exJsonArray.length(); i++) {
             JSONArray exPair = exJsonArray.getJSONArray(i);
@@ -102,7 +112,6 @@ public class FilterPresenterImpl implements FilterPresenter {
             addToMap(optionId1, optionId2);
             addToMap(optionId2, optionId1);
         }
-        realm.commitTransaction();
     }
 
     private void addToMap(Integer opt1, Integer opt2) {
