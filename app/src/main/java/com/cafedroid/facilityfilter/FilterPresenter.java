@@ -11,9 +11,11 @@ public interface FilterPresenter {
 
     void loadData();
 
-    void attachView(Context context, Realm realm);
+    void attachView(Context context);
 
     void updateFilters(Integer optId);
 
     void removeExclusions(Integer selectedOptionId);
+
+    void destroy();
 }

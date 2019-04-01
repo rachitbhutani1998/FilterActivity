@@ -1,7 +1,6 @@
 package com.cafedroid.facilityfilter.adapter;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -65,7 +64,6 @@ public class FacilityAdapter extends RecyclerView.Adapter<FacilityAdapter.Facili
             button.setOnClickListener(v -> {
                 realm.beginTransaction();
                 button.setChecked(option.isChecked());
-                Log.e("ADAPTER", "onBindViewHolder: " + button.isChecked());
                 if (currentFacility.getSelectedOptionId() != null)
                     callback.removeOption(currentFacility.getSelectedOptionId());
                 callback.optionChecked(button.getId());

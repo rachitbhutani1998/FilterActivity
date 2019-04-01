@@ -11,12 +11,6 @@ public class Option extends RealmObject {
     public Option() {
     }
 
-    public Option(String name, String icon, int _id) {
-        this.name = name;
-        this.icon = icon;
-        this._id = _id;
-    }
-
     public String getName() {
         return name;
     }

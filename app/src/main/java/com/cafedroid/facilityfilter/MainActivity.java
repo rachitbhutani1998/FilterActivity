@@ -1,11 +1,14 @@
 package com.cafedroid.facilityfilter;
 
 import android.os.Bundle;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.cafedroid.facilityfilter.adapter.FacilityAdapter;
 import com.cafedroid.facilityfilter.model.Facility;
-import com.cafedroid.facilityfilter.model.Option;
 
 import java.util.ArrayList;
 
@@ -14,50 +17,59 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import io.realm.Realm;
 import io.realm.RealmList;
 
 public class MainActivity extends AppCompatActivity implements FilterView {
 
     @BindView(R.id.facilities_rv)
     RecyclerView mRecyclerView;
+    @BindView(R.id.error_tv)
+    TextView errorTv;
+    @BindView(R.id.retry_btn)
+    Button retryBtn;
+    @BindView(R.id.error_view)
+    LinearLayout errorView;
+    @BindView(R.id.loading_progress)
+    ProgressBar loadingProgress;
 
-    FilterPresenter mPresenter;
+    private FilterPresenter mPresenter;
 
-    FacilityAdapter mAdapter;
-
-    OnOptionSelected optionSelected;
-
-    private Realm realm;
+    private FacilityAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        realm = Realm.getDefaultInstance();
 
         mPresenter = new FilterPresenterImpl(this);
         mAdapter = new FacilityAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
 
-        optionSelected = new OnOptionSelected() {
+        OnOptionSelected optionSelected = new OnOptionSelected() {
             @Override
             public void optionChecked(int optId) {
                 mPresenter.updateFilters(optId);
             }
+
             @Override
             public void removeOption(int selectedOptionId) {
                 mPresenter.removeExclusions(selectedOptionId);
             }
         };
         mAdapter.setCallback(optionSelected);
-        mPresenter.attachView(this,realm);
+        mPresenter.attachView(this);
+
+        retryBtn.setOnClickListener(v -> {
+            mPresenter.loadData();
+        });
     }
 
 
     @Override
     public void updateFacilities(RealmList<Facility> facilities) {
+        loadingProgress.setVisibility(View.GONE);
+        errorView.setVisibility(View.GONE);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mAdapter.setFacilities(facilities);
         mAdapter.notifyDataSetChanged();
@@ -65,7 +77,9 @@ public class MainActivity extends AppCompatActivity implements FilterView {
 
     @Override
     public void showError(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        loadingProgress.setVisibility(View.GONE);
+        errorView.setVisibility(View.VISIBLE);
+        errorTv.setText(message);
     }
 
     @Override
@@ -74,7 +88,14 @@ public class MainActivity extends AppCompatActivity implements FilterView {
         mAdapter.notifyDataSetChanged();
     }
 
+    @Override
+    public void showLoading(boolean show) {
+        errorView.setVisibility(View.GONE);
+        loadingProgress.setVisibility(View.VISIBLE);
+    }
+
     public interface OnOptionSelected {
+
         void optionChecked(int optId);
 
         void removeOption(int selectedOptionId);
@@ -82,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements FilterView {
 
     @Override
     protected void onDestroy() {
+        mPresenter.destroy();
         super.onDestroy();
-        realm.close();
     }
 }

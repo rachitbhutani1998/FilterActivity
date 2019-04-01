@@ -13,4 +13,6 @@ interface FilterView {
     void showError(String message);
 
     void setExclusions(ArrayList<Integer> exclusions);
+
+    void showLoading(boolean show);
 }

@@ -18,12 +18,6 @@ public class Facility extends RealmObject {
     public Facility() {
     }
 
-    public Facility(String name, int _id, RealmList<Option> options) {
-        this.name = name;
-        this._id = _id;
-        this.options = options;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -53,18 +47,18 @@ public class Facility extends RealmObject {
     public static RealmList<Facility> parseJson(JSONObject response) throws JSONException {
         Realm realm = Realm.getDefaultInstance();
         RealmList<Facility> facilities = new RealmList<>();
-        JSONArray facilitiesArray = response.getJSONArray("facilities");
+        JSONArray facilitiesArray = response.getJSONArray(Constants.RESPONSE_FACILITIES);
         for (int i = 0; i < facilitiesArray.length(); i++) {
             JSONObject thisFacility = facilitiesArray.getJSONObject(i);
-            String facilityName = thisFacility.getString("name");
-            int _id = Integer.parseInt(thisFacility.getString("facility_id"));
-            JSONArray optionsArray = thisFacility.getJSONArray("options");
+            String facilityName = thisFacility.getString(Constants.RESPONSE_NAME);
+            int _id = Integer.parseInt(thisFacility.getString(Constants.RESPONSE_FACILITY_ID));
+            JSONArray optionsArray = thisFacility.getJSONArray(Constants.RESPONSE_OPTIONS);
             RealmList<Option> options = new RealmList<>();
             for (int j = 0; j < optionsArray.length(); j++) {
                 JSONObject optionObject = optionsArray.getJSONObject(j);
-                String name = optionObject.getString("name");
-                String icon = optionObject.getString("icon");
-                int id = Integer.parseInt(optionObject.getString("id"));
+                String name = optionObject.getString(Constants.RESPONSE_NAME);
+                String icon = optionObject.getString(Constants.RESPONSE_ICON);
+                int id = Integer.parseInt(optionObject.getString(Constants.RESPONSE_ID));
                 Option option = realm.createObject(Option.class);
                 option.setName(name);
                 option.setIcon(icon);

@@ -2,10 +2,12 @@ package com.cafedroid.facilityfilter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.net.ConnectivityManager;
 
 import com.androidnetworking.AndroidNetworking;
 import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.JSONObjectRequestListener;
+import com.cafedroid.facilityfilter.model.Constants;
 import com.cafedroid.facilityfilter.model.DbValidity;
 import com.cafedroid.facilityfilter.model.Exclusion;
 import com.cafedroid.facilityfilter.model.Facility;
@@ -32,6 +34,8 @@ public class FilterPresenterImpl implements FilterPresenter {
 
     private Realm realm;
 
+    private Context context;
+
     FilterPresenterImpl(FilterView filterView) {
         this.filterView = filterView;
         this.exclusions = new ArrayList<>();
@@ -39,6 +43,7 @@ public class FilterPresenterImpl implements FilterPresenter {
 
     @Override
     public void loadData() {
+        filterView.showLoading(true);
         realm.beginTransaction();
 
         DbValidity validityResult = realm.where(DbValidity.class)
@@ -71,7 +76,11 @@ public class FilterPresenterImpl implements FilterPresenter {
     }
 
     private void callApi() {
-        AndroidNetworking.get("https://my-json-server.typicode.com/iranjith4/ad-assignment/db")
+        if (!isNetworkAvailable()) {
+            filterView.showError("Check your internet connection and try again.");
+            return;
+        }
+        AndroidNetworking.get(Constants.API_URL)
                 .build()
                 .getAsJSONObject(new JSONObjectRequestListener() {
                     @Override
@@ -101,13 +110,18 @@ public class FilterPresenterImpl implements FilterPresenter {
                 });
     }
 
+    private boolean isNetworkAvailable() {
+        ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        return manager.getActiveNetworkInfo() != null && manager.getActiveNetworkInfo().isConnected();
+    }
+
     @SuppressLint("UseSparseArrays")
     private void parseJsonForExclusions(JSONObject response) throws JSONException {
-        JSONArray exJsonArray = response.getJSONArray("exclusions");
+        JSONArray exJsonArray = response.getJSONArray(Constants.RESPONSE_EXCLUSIONS);
         for (int i = 0; i < exJsonArray.length(); i++) {
             JSONArray exPair = exJsonArray.getJSONArray(i);
-            Integer optionId1 = exPair.getJSONObject(0).getInt("options_id");
-            Integer optionId2 = exPair.getJSONObject(1).getInt("options_id");
+            Integer optionId1 = exPair.getJSONObject(0).getInt(Constants.RESPONSE_OPTION_ID);
+            Integer optionId2 = exPair.getJSONObject(1).getInt(Constants.RESPONSE_OPTION_ID);
 
             addToMap(optionId1, optionId2);
             addToMap(optionId2, optionId1);
@@ -130,8 +144,9 @@ public class FilterPresenterImpl implements FilterPresenter {
     }
 
     @Override
-    public void attachView(Context context, Realm realm) {
-        this.realm = realm;
+    public void attachView(Context context) {
+        realm = Realm.getDefaultInstance();
+        this.context = context;
         loadData();
     }
 
@@ -162,5 +177,10 @@ public class FilterPresenterImpl implements FilterPresenter {
                 }
             }
         }
+    }
+
+    @Override
+    public void destroy() {
+        realm.close();
     }
 }

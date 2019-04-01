@@ -12,10 +12,6 @@ public class Exclusion extends RealmObject {
     public Exclusion() {
     }
 
-    public Exclusion(int opt1) {
-        this.key = opt1;
-    }
-
     public int getKey() {
         return key;
     }
